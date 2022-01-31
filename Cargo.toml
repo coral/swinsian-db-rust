@@ -1,0 +1,17 @@
+[package]
+name = "swinsiandb"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = {version ="1.0.136", features = ["derive"]}
+rusqlite = "0.26.3"
+serde_rusqlite = "0.29.0"
+thiserror = "1.0.30"
+clap = { version = "3.0.13", features = ["derive"] }
+
+[lib]
+name = "swinsiandb"
+path = "src/lib.rs"
