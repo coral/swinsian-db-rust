@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clap::Parser;
 use std::path::Path;
 use swinsiandb::Database;
@@ -8,11 +9,22 @@ struct Args {
     database_path: String,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
 
-    let db_path = Path::new(&args.database_path);
-    Database::from_file(db_path).unwrap();
+    println!("Listing playlists");
 
-    println!("Hello, world!");
+    let db_path = Path::new(&args.database_path);
+    let mut db = Database::from_file(db_path)?;
+
+    let playlists = db.get_playlists();
+    //dbg!(playlists);
+
+    let d = db.get_playlist("TECHNO")?;
+
+    let songs = db.get_playlist_songs(&d);
+
+    dbg!(songs);
+
+    Ok(())
 }
