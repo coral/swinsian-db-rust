@@ -26,10 +26,10 @@ pub struct Playlist {
 pub struct Track {
     track_id: i64,
     title: String,
-    artist: String,
-    album: String,
-    genre: String,
-    composer: String,
+    artist: Option<String>,
+    album: Option<String>,
+    genre: Option<String>,
+    composer: Option<String>,
     year: Option<i64>,
     tracknumber: Option<i64>,
     discnumber: Option<i64>,
@@ -41,31 +41,31 @@ pub struct Track {
     dateadded: Option<f64>,
     lastplayed: Option<f64>,
     playcount: i64,
-    rating: i64,
+    rating: f64,
     filesize: i64,
     enabled: i64,
     cue: Option<i64>,
     gapless: Option<i64>,
     compilation: Option<i64>,
-    encoder: String,
+    encoder: Option<String>,
     path: String,
     filename: String,
-    comment: String,
+    comment: Option<String>,
     properties_id: i64,
-    albumartist: String,
+    albumartist: Option<String>,
     totaldiscnumber: Option<i64>,
     datecreated: Option<f64>,
-    grouping: String,
+    grouping: Option<String>,
     bpm: Option<i64>,
-    publisher: String,
+    publisher: Option<String>,
     totaltracknumber: Option<i64>,
-    description: String,
+    description: Option<String>,
     datemodified: f64,
-    catalognumber: String,
-    conductor: String,
-    discsubtitle: String,
-    lyrics: String,
-    copyright: String,
+    catalognumber: Option<String>,
+    conductor: Option<String>,
+    discsubtitle: Option<String>,
+    lyrics: Option<String>,
+    copyright: Option<String>,
 }
 
 impl Playlist {
@@ -120,15 +120,7 @@ impl Database {
         )?;
 
         let res = from_rows::<Track>(statement.query([p.playlist_id])?);
-        let tracks: Result<_, _> = res
-            .into_iter()
-            .map(|r| {
-                r.map(|rm| {
-                    dbg!(&rm);
-                    rm
-                })
-            })
-            .collect();
+        let tracks: Result<_, _> = res.into_iter().map(|r| r.map(|rm| rm)).collect();
 
         Ok(tracks?)
     }

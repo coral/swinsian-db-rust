@@ -22,9 +22,9 @@ fn main() -> Result<()> {
 
     let d = db.get_playlist("TECHNO")?;
 
-    let songs = db.get_playlist_songs(&d);
+    let songs = db.get_playlist_songs(&d)?;
 
-    dbg!(songs);
+    //dbg!(songs);
 
     Ok(())
 }
