@@ -1,75 +1,95 @@
-use rusqlite::{params, Connection, Error as RusqliteError, OpenFlags, Result as DBResult};
+use rusqlite::{Connection, Error as RusqliteError, OpenFlags};
 use serde::{Deserialize, Serialize};
-use serde_rusqlite::{
-    columns_from_statement, from_row, from_row_with_columns, from_rows, Error as SerdeRusqliteError,
-};
+use serde_rusqlite::{from_rows, Error as SerdeRusqliteError};
 use std::collections::HashMap;
-use std::{path::Path, slice::SliceIndex};
+use std::path::Path;
 use thiserror::Error;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Playlist {
-    playlist_id: i64,
-    name: String,
-    pindex: i64,
-    applescriptid: String,
-    smart: Option<i64>,
-    smartpredicate: Option<Vec<u8>>,
-    sortkey: Option<String>,
-    ascending: i64,
-    folder: Option<i64>,
-    expanded: Option<i64>,
-    itunes_id: Option<String>,
+    pub playlist_id: i64,
+    pub name: String,
+    pub pindex: i64,
+    pub applescriptid: String,
+    pub smart: Option<i64>,
+    pub smartpredicate: Option<Vec<u8>>,
+    pub sortkey: Option<String>,
+    pub ascending: i64,
+    pub expanded: Option<i64>,
+    pub itunes_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Track {
-    track_id: i64,
-    title: String,
-    artist: Option<String>,
-    album: Option<String>,
-    genre: Option<String>,
-    composer: Option<String>,
-    year: Option<i64>,
-    tracknumber: Option<i64>,
-    discnumber: Option<i64>,
-    bitrate: Option<i64>,
-    bitdepth: Option<i64>,
-    samplerate: Option<i64>,
-    channels: Option<i64>,
-    length: Option<f64>,
-    dateadded: Option<f64>,
-    lastplayed: Option<f64>,
-    playcount: i64,
-    rating: f64,
-    filesize: i64,
-    enabled: i64,
-    cue: Option<i64>,
-    gapless: Option<i64>,
-    compilation: Option<i64>,
-    encoder: Option<String>,
-    path: String,
-    filename: String,
-    comment: Option<String>,
-    properties_id: i64,
-    albumartist: Option<String>,
-    totaldiscnumber: Option<i64>,
-    datecreated: Option<f64>,
-    grouping: Option<String>,
-    bpm: Option<i64>,
-    publisher: Option<String>,
-    totaltracknumber: Option<i64>,
-    description: Option<String>,
-    datemodified: f64,
-    catalognumber: Option<String>,
-    conductor: Option<String>,
-    discsubtitle: Option<String>,
-    lyrics: Option<String>,
-    copyright: Option<String>,
+    pub track_id: i64,
+    pub title: String,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub genre: Option<String>,
+    pub composer: Option<String>,
+    pub year: Option<i64>,
+    #[serde(rename = "tracknumber")]
+    pub track_number: Option<i64>,
+    #[serde(rename = "discnumber")]
+    pub disc_number: Option<i64>,
+    pub bitrate: Option<i64>,
+    #[serde(rename = "bitdepth")]
+    pub bit_depth: Option<i64>,
+    pub samplerate: Option<i64>,
+    pub channels: Option<i64>,
+    pub length: Option<f64>,
+    #[serde(rename = "dateadded")]
+    pub date_added: Option<f64>,
+    #[serde(rename = "lastplayed")]
+    pub last_played: Option<f64>,
+    pub playcount: i64,
+    pub rating: f64,
+    pub filesize: i64,
+    pub enabled: i64,
+    pub cue: Option<i64>,
+    pub gapless: Option<i64>,
+    pub compilation: Option<i64>,
+    pub encoder: Option<String>,
+    pub path: String,
+    pub filename: String,
+    pub comment: Option<String>,
+    pub properties_id: i64,
+    #[serde(rename = "albumartist")]
+    pub album_artist: Option<String>,
+    #[serde(rename = "totaldiscnumber")]
+    pub total_disc_number: Option<i64>,
+    #[serde(rename = "datecreated")]
+    pub date_created: Option<f64>,
+    pub grouping: Option<String>,
+    pub bpm: Option<i64>,
+    pub publisher: Option<String>,
+    #[serde(rename = "totaltracknumber")]
+    pub total_track_number: Option<i64>,
+    pub description: Option<String>,
+    #[serde(rename = "datemodified")]
+    pub date_modified: f64,
+    #[serde(rename = "catalognumber")]
+    pub catalog_number: Option<String>,
+    pub conductor: Option<String>,
+    #[serde(rename = "discsubtitle")]
+    pub disc_subtitle: Option<String>,
+    pub lyrics: Option<String>,
+    pub copyright: Option<String>,
 }
 
 impl Playlist {
-    pub fn songs(&self) {}
+    //HAHA OK LOL NSPredicate IS NOT THAT EASY TO IMPLEMENT
+
+    // pub fn get_predicate(&self) -> Result<(), DatabaseError> {
+    //     self.smart.ok_or(DatabaseError::PlaylistNotSmart(self.name));
+
+    //     let pred = self
+    //         .smartpredicate
+    //         .ok_or(DatabaseError::NoPredicate(self.name))?;
+    //     plist::from_bytes(&pred);
+
+    //     Ok(())
+    // }
 }
 
 pub struct Database {
@@ -80,7 +100,7 @@ impl Database {
     pub fn from_file(filename: &Path) -> Result<Database, DatabaseError> {
         let db = Connection::open_with_flags(
             &filename,
-            OpenFlags::SQLITE_OPEN_READ_WRITE
+            OpenFlags::SQLITE_OPEN_READ_ONLY
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX
                 | OpenFlags::SQLITE_OPEN_URI
                 | OpenFlags::SQLITE_OPEN_EXRESCODE,
@@ -90,7 +110,9 @@ impl Database {
     }
 
     pub fn get_playlist(&self, name: &str) -> Result<Playlist, DatabaseError> {
-        let mut statement = self.conn.prepare("SELECT * FROM playlist where NAME = ?")?;
+        let mut statement = self
+            .conn
+            .prepare("SELECT * FROM playlist where NAME = ? AND folder IS NULL")?;
 
         let mut res = from_rows::<Playlist>(statement.query([name])?);
 
@@ -103,7 +125,9 @@ impl Database {
     }
 
     pub fn get_playlists(&self) -> Result<HashMap<i64, Playlist>, DatabaseError> {
-        let mut statement = self.conn.prepare("SELECT * FROM playlist")?;
+        let mut statement = self
+            .conn
+            .prepare("SELECT * FROM playlist WHERE folder IS NULL")?;
         let res = from_rows::<Playlist>(statement.query([])?);
 
         let up: Result<_, _> = res
@@ -116,7 +140,7 @@ impl Database {
 
     pub fn get_playlist_songs(&self, p: &Playlist) -> Result<Vec<Track>, DatabaseError> {
         let mut statement = self.conn.prepare(
-            "SELECT * FROM track WHERE track_id = (SELECT  track_id FROM playlist WHERE playlist_id = ?)",
+            "SELECT * FROM track WHERE track_id IN (SELECT track_id FROM playlisttrack WHERE playlist_id = ?)",
         )?;
 
         let res = from_rows::<Track>(statement.query([p.playlist_id])?);
@@ -124,8 +148,6 @@ impl Database {
 
         Ok(tracks?)
     }
-
-    //pub fn get_songs_for_playlist()
 }
 
 #[derive(Error, Debug)]
