@@ -109,6 +109,8 @@ impl Database {
         Ok(Database { conn: db })
     }
 
+    /// This gets the FIRST match, if there are multiple playlists with the same name
+    /// this function returns the first one that is found
     pub fn get_playlist(&self, name: &str) -> Result<Playlist, DatabaseError> {
         let mut statement = self
             .conn
@@ -140,7 +142,7 @@ impl Database {
 
     pub fn get_playlist_songs(&self, p: &Playlist) -> Result<Vec<Track>, DatabaseError> {
         let mut statement = self.conn.prepare(
-            "SELECT * FROM track WHERE track_id IN (SELECT track_id FROM playlisttrack WHERE playlist_id = ?)",
+            "SELECT track.*FROM track LEFT JOIN playlisttrack  on playlisttrack.track_id = track.track_id  WHERE playlisttrack.playlist_id = ? ORDER BY playlisttrack.tindex;",
         )?;
 
         let res = from_rows::<Track>(statement.query([p.playlist_id])?);
